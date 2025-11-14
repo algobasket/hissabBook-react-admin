@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 interface NavItem {
   href: string;
   label: string;
-  icon: React.ReactNode;
+  icon: React.ComponentType<{ className?: string }>;
   section?: string;
 }
 
@@ -165,7 +165,7 @@ export default function Sidebar() {
               </div>
               {sectionItems.map((item) => {
                 const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
-                const Icon = item.icon as React.ComponentType<{ className?: string }>;
+                const Icon = item.icon;
 
                 return (
                   <Link
