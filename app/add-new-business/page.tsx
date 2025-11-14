@@ -56,8 +56,8 @@ export default function AddNewBusinessPage() {
     try {
       await businessesApi.create({
         name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-        masterWalletUpi: formData.masterWalletUpi.trim() || undefined,
+        description: formData.description?.trim() || undefined,
+        masterWalletUpi: formData.masterWalletUpi?.trim() || undefined,
       });
 
       setSuccess(true);
