@@ -1,6 +1,9 @@
 # React Admin Dockerfile
 FROM node:20-alpine
 
+# Install necessary packages for Next.js
+RUN apk add --no-cache libc6-compat
+
 # Set working directory
 WORKDIR /app
 
