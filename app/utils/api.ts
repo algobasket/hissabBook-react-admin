@@ -5,7 +5,7 @@
 import { getAuthToken } from "./auth";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") || "http://localhost:5000";
+  process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") || "/backend";
 
 export interface ApiError {
   message: string;
