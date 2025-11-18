@@ -16,6 +16,7 @@ export default function CashbooksPage() {
   const [mounted, setMounted] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [deletingBookId, setDeletingBookId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -112,6 +113,27 @@ export default function CashbooksPage() {
     router.push(`/add-new-cashbook?name=${encodeURIComponent(template)}`);
   };
 
+  const handleDeleteBook = async (bookId: string, bookName: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    
+    if (!window.confirm(`Are you sure you want to delete "${bookName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setDeletingBookId(bookId);
+      await booksApi.delete(bookId);
+      // Refresh the books list
+      fetchBooks();
+    } catch (err: any) {
+      console.error("Error deleting book:", err);
+      const errorMessage = err?.message || err?.error?.message || err?.error || "Failed to delete book";
+      alert(errorMessage);
+    } finally {
+      setDeletingBookId(null);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-100">
       <Sidebar />
@@ -154,44 +176,65 @@ export default function CashbooksPage() {
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {books.map((book) => (
-                <div
-                  key={book.id}
-                  className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => {
-                    router.push(`/cashbooks/${book.id}`);
-                  }}
-                >
-                  {/* Book Image */}
-                  <div className="mb-4 flex h-32 w-full items-center justify-center overflow-hidden rounded-xl bg-slate-50">
-                    <Image
-                      src="/images/1.png"
-                      alt={book.name}
-                      width={120}
-                      height={120}
-                      className="h-full w-full object-contain"
-                    />
-                  </div>
-                  
-                  <h3 className="text-lg font-semibold text-dark mb-2">{book.name}</h3>
-                  <p className="text-sm text-slate-500 mb-4">{formatDateAgo(book.createdAt)}</p>
-                  {book.description && (
-                    <p className="text-sm text-slate-600 mb-4 line-clamp-2">{book.description}</p>
-                  )}
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                    <div className="text-xs text-slate-500">
-                      <span className="font-medium text-slate-700">{book.transactionCount}</span> transactions
-                    </div>
-                    <span
-                      className={`text-sm font-semibold ${
-                        book.totalBalance >= 0 ? "text-emerald-600" : "text-red-600"
-                      }`}
+              {books.map((book) => {
+                const isDeleting = deletingBookId === book.id;
+                return (
+                  <div
+                    key={book.id}
+                    className="group relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => {
+                      if (!isDeleting) {
+                        router.push(`/cashbooks/${book.id}`);
+                      }
+                    }}
+                  >
+                    {/* Delete Button */}
+                    <button
+                      onClick={(e) => handleDeleteBook(book.id, book.name, e)}
+                      disabled={isDeleting}
+                      className="absolute right-3 top-3 z-10 rounded-lg bg-red-50 p-2 text-red-600 opacity-0 transition-opacity hover:bg-red-100 group-hover:opacity-100 disabled:opacity-50"
+                      title="Delete Book"
                     >
-                      {formatCurrency(book.totalBalance, book.currencyCode)}
-                    </span>
+                      {isDeleting ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-300 border-t-red-600"></div>
+                      ) : (
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      )}
+                    </button>
+
+                    {/* Book Image */}
+                    <div className="mb-4 flex h-32 w-full items-center justify-center overflow-hidden rounded-xl bg-slate-50">
+                      <Image
+                        src="/images/1.png"
+                        alt={book.name}
+                        width={120}
+                        height={120}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                    
+                    <h3 className="text-lg font-semibold text-dark mb-2 pr-8">{book.name}</h3>
+                    <p className="text-sm text-slate-500 mb-4">{formatDateAgo(book.createdAt)}</p>
+                    {book.description && (
+                      <p className="text-sm text-slate-600 mb-4 line-clamp-2">{book.description}</p>
+                    )}
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                      <div className="text-xs text-slate-500">
+                        <span className="font-medium text-slate-700">{book.transactionCount}</span> transactions
+                      </div>
+                      <span
+                        className={`text-sm font-semibold ${
+                          book.totalBalance >= 0 ? "text-emerald-600" : "text-red-600"
+                        }`}
+                      >
+                        {formatCurrency(book.totalBalance, book.currencyCode)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 

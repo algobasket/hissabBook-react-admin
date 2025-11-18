@@ -7,7 +7,8 @@ import { authApi, businessesApi, Business } from "../utils/api";
 
 export default function Header() {
   const router = useRouter();
-  const user = getUser();
+  const [mounted, setMounted] = useState(false);
+  const [user, setUser] = useState<ReturnType<typeof getUser>>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showBusinessDropdown, setShowBusinessDropdown] = useState(false);
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -16,6 +17,11 @@ export default function Header() {
   const [loadingBusinesses, setLoadingBusinesses] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const businessDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    setUser(getUser());
+  }, []);
 
   const userInitials = user?.email
     ?.split("@")[0]
@@ -188,9 +194,9 @@ export default function Header() {
               className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 hover:border-primary transition-colors"
             >
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                {userInitials}
+                {mounted ? userInitials : "AD"}
               </span>
-              <span>{user?.email || "Admin"}</span>
+              <span>{mounted ? (user?.email || "Admin") : "Admin"}</span>
               <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
               </svg>
@@ -199,7 +205,7 @@ export default function Header() {
               <div className="absolute right-0 mt-2 w-48 rounded-xl border border-slate-200 bg-white shadow-lg">
                 <div className="py-2">
                   <div className="px-4 py-2 text-xs text-slate-500 border-b border-slate-100">
-                    {user?.email}
+                    {mounted ? (user?.email || "Admin") : "Admin"}
                   </div>
                   <button
                     onClick={handleLogout}

@@ -4,8 +4,13 @@
 
 import { getAuthToken } from "./auth";
 
+// For local development, use localhost:5000 directly
+// For production (with nginx), use /backend
 const API_BASE =
-  process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") || "/backend";
+  process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") ||
+  (typeof window !== "undefined" && window.location.hostname === "localhost"
+    ? "http://localhost:5000"
+    : "/backend");
 
 export interface ApiError {
   message: string;
@@ -19,9 +24,13 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const token = getAuthToken();
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...(options.headers as Record<string, string> || {}),
   };
+
+  // Only set Content-Type if there's a body
+  if (options.body) {
+    headers["Content-Type"] = "application/json";
+  }
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -142,6 +151,41 @@ export const authApi = {
 export const rolesApi = {
   getAll: () => apiRequest<RolesResponse>("/api/roles"),
   getPermissionsMatrix: () => apiRequest<RolesPermissionsResponse>("/api/roles-permissions"),
+};
+
+export interface Permission {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  category: string;
+  granted?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PermissionsResponse {
+  permissions: Permission[];
+}
+
+export interface UpdateRolePermissionsRequest {
+  permissionIds: string[];
+}
+
+export interface UpdateRolePermissionsResponse {
+  success: boolean;
+  message: string;
+}
+
+export const permissionsApi = {
+  getAll: () => apiRequest<PermissionsResponse>("/api/permissions"),
+  getRolePermissions: (roleId: string) =>
+    apiRequest<PermissionsResponse>(`/api/roles/${roleId}/permissions`),
+  updateRolePermissions: (roleId: string, data: UpdateRolePermissionsRequest) =>
+    apiRequest<UpdateRolePermissionsResponse>(`/api/roles/${roleId}/permissions`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
 };
 
 export interface EndUser {
@@ -403,6 +447,12 @@ export const booksApi = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+
+  delete: (id: string) => {
+    return apiRequest<{ success: boolean; message: string }>(`/api/books/${id}`, {
+      method: "DELETE",
+    });
+  },
 };
 
 export const walletsApi = {

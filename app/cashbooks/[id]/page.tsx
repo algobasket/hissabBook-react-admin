@@ -12,6 +12,7 @@ export default function BookDetailPage() {
   const params = useParams();
   const bookId = params?.id as string;
 
+  const [mounted, setMounted] = useState(false);
   const [book, setBook] = useState<Book | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [users, setUsers] = useState<EndUser[]>([]);
@@ -25,6 +26,12 @@ export default function BookDetailPage() {
   const [addingUser, setAddingUser] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     if (!isAuthenticated()) {
       router.push("/login");
       return;
@@ -35,7 +42,7 @@ export default function BookDetailPage() {
       fetchTransactions();
       fetchUsers();
     }
-  }, [router, bookId]);
+  }, [mounted, router, bookId]);
 
   const fetchBook = async () => {
     try {
@@ -170,6 +177,22 @@ export default function BookDetailPage() {
       </span>
     );
   };
+
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen bg-slate-100">
+        <Sidebar />
+        <main className="flex-1 overflow-y-auto">
+          <Header />
+          <section className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-10">
+            <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-panel">
+              <p className="text-slate-600">Loading...</p>
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  }
 
   if (!isAuthenticated()) {
     return null;
