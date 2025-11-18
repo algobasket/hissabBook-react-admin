@@ -7,9 +7,9 @@ import { rolesApi, permissionsApi, Role, Permission } from "../utils/api";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 
-interface PermissionWithGranted extends Permission {
+type PermissionWithGranted = Permission & {
   granted: boolean;
-}
+};
 
 export default function RolesPermissionsPage() {
   const router = useRouter();
