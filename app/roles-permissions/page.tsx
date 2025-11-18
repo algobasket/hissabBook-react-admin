@@ -3,23 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { isAuthenticated } from "../utils/auth";
-import { rolesApi, permissionsApi } from "../utils/api";
+import { rolesApi, permissionsApi, Role, Permission } from "../utils/api";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 
-interface Role {
-  id: string;
-  name: string;
-  description: string;
-  userCount: number;
-}
-
-interface Permission {
-  id: string;
-  name: string;
-  code: string;
-  description: string;
-  category: string;
+interface PermissionWithGranted extends Permission {
   granted: boolean;
 }
 
@@ -27,7 +15,7 @@ export default function RolesPermissionsPage() {
   const router = useRouter();
   const [roles, setRoles] = useState<Role[]>([]);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [permissions, setPermissions] = useState<PermissionWithGranted[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +58,12 @@ export default function RolesPermissionsPage() {
       setLoading(true);
       setError(null);
       const response = await permissionsApi.getRolePermissions(roleId);
-      setPermissions(response.permissions);
+      // Map permissions to ensure granted is always a boolean
+      const permissionsWithGranted: PermissionWithGranted[] = response.permissions.map(permission => ({
+        ...permission,
+        granted: permission.granted ?? false,
+      }));
+      setPermissions(permissionsWithGranted);
     } catch (err: any) {
       console.error("Error fetching role permissions:", err);
       setError(err?.message || err?.error?.message || err?.error || "Failed to load permissions");
@@ -115,7 +108,7 @@ export default function RolesPermissionsPage() {
     }
     acc[perm.category].push(perm);
     return acc;
-  }, {} as Record<string, Permission[]>);
+  }, {} as Record<string, PermissionWithGranted[]>);
 
   if (!isAuthenticated()) {
     return null;
