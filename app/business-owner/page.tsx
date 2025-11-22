@@ -16,11 +16,18 @@ export default function BusinessOwnerPage() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [businessesLoading, setBusinessesLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [businessesError, setBusinessesError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [deletingBusinessId, setDeletingBusinessId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [stats, setStats] = useState({
+    totalBusinesses: 0,
+    totalOwners: 0,
+    totalPartners: 0,
+    totalStaff: 0,
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -36,7 +43,37 @@ export default function BusinessOwnerPage() {
 
     fetchAdmins();
     fetchBusinesses();
+    fetchStats();
   }, [router, mounted]);
+
+  const fetchStats = async () => {
+    try {
+      setStatsLoading(true);
+      const token = localStorage.getItem("adminAuthToken");
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE}/api/dashboard/business-stats`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStats({
+          totalBusinesses: data.totalBusinesses || 0,
+          totalOwners: data.totalOwners || 0,
+          totalPartners: data.totalPartners || 0,
+          totalStaff: data.totalStaff || 0,
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching stats:", err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   const fetchAdmins = () => {
     setLoading(true);
@@ -127,111 +164,37 @@ export default function BusinessOwnerPage() {
       <main className="flex-1 overflow-y-auto">
         <Header />
         <section className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
+          {/* Statistics Cards */}
           <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-panel">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-2xl font-semibold text-dark">Business Owner / Admin</h2>
+            <div className="mb-6">
+              <h2 className="text-2xl font-semibold text-dark">Business Statistics</h2>
             </div>
 
-            {loading && (
+            {statsLoading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="text-slate-600">Loading admin information...</div>
+                <div className="text-slate-600">Loading statistics...</div>
               </div>
-            )}
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-lg border border-slate-200 bg-gradient-to-br from-blue-50 to-white p-6 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Business</p>
+                  <p className="mt-2 text-3xl font-bold text-dark">{stats.totalBusinesses}</p>
+                </div>
 
-            {error && (
-              <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-                {error}
-              </div>
-            )}
+                <div className="rounded-lg border border-slate-200 bg-gradient-to-br from-purple-50 to-white p-6 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Owners</p>
+                  <p className="mt-2 text-3xl font-bold text-dark">{stats.totalOwners}</p>
+                </div>
 
-            {!loading && !error && admins.length === 0 && (
-              <div className="py-12 text-center text-slate-600">
-                <p>No admin users found.</p>
-              </div>
-            )}
+                <div className="rounded-lg border border-slate-200 bg-gradient-to-br from-emerald-50 to-white p-6 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Partners</p>
+                  <p className="mt-2 text-3xl font-bold text-dark">{stats.totalPartners}</p>
+                </div>
 
-            {!loading && !error && admins.length > 0 && (
-              <div className="space-y-6">
-                {admins.map((admin) => (
-                  <div
-                    key={admin.id}
-                    className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-6 shadow-sm"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="mb-4 flex items-center gap-4">
-                          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
-                            {admin.fullName.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-semibold text-dark">{admin.fullName}</h3>
-                            <p className="text-sm text-slate-600">{admin.email}</p>
-                            <div className="mt-1 flex items-center gap-2">
-                              <span
-                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                  admin.status === "active"
-                                    ? "bg-emerald-100 text-emerald-800"
-                                    : "bg-slate-100 text-slate-800"
-                                }`}
-                              >
-                                {admin.status}
-                              </span>
-                              <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                                Admin
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                          <div className="rounded-lg border border-slate-200 bg-white p-4">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</p>
-                            <p className="mt-1 text-sm font-medium text-dark">{admin.phone || "Not provided"}</p>
-                          </div>
-
-                          <div className="rounded-lg border border-slate-200 bg-white p-4">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">UPI ID</p>
-                            <p className="mt-1 text-sm font-medium text-dark">{admin.upiId || "Not provided"}</p>
-                          </div>
-
-                          <div className="rounded-lg border border-slate-200 bg-white p-4">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Wallet Balance</p>
-                            <p className="mt-1 text-lg font-semibold text-dark">
-                              {admin.walletCurrency} {admin.walletBalance.toFixed(2)}
-                            </p>
-                          </div>
-
-                          <div className="rounded-lg border border-slate-200 bg-white p-4">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Account Created</p>
-                            <p className="mt-1 text-sm font-medium text-dark">{formatDate(admin.createdAt)}</p>
-                          </div>
-
-                          <div className="rounded-lg border border-slate-200 bg-white p-4">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Last Login</p>
-                            <p className="mt-1 text-sm font-medium text-dark">{formatDate(admin.lastLoginAt)}</p>
-                          </div>
-
-                          {admin.upiQrCode && (
-                            <div className="rounded-lg border border-slate-200 bg-white p-4">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">UPI QR Code</p>
-                              <div className="mt-2 flex justify-center">
-                                <img
-                                  src={`${API_BASE}/uploads/${admin.upiQrCode}`}
-                                  alt="UPI QR Code"
-                                  className="h-24 w-24 object-contain"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.style.display = "none";
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                <div className="rounded-lg border border-slate-200 bg-gradient-to-br from-amber-50 to-white p-6 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Staffs</p>
+                  <p className="mt-2 text-3xl font-bold text-dark">{stats.totalStaff}</p>
+                </div>
               </div>
             )}
           </div>

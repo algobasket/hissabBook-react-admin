@@ -18,11 +18,14 @@ const navItems: NavItem[] = [
   { href: "/cashbooks", label: "Cashbooks", icon: CashbooksIcon, section: "main" },
   { href: "/roles", label: "Roles", icon: RolesIcon, section: "management" },
   { href: "/end-users", label: "End Users", icon: UsersIcon, section: "management" },
-  { href: "/business-owner", label: "Business Owner / Admin", icon: BusinessIcon, section: "management" },
+  { href: "/business-owner", label: "Businesses List", icon: BusinessIcon, section: "management" },
+  { href: "/team", label: "Team", icon: TeamIcon, section: "management" },
   { href: "/auditor", label: "Auditor", icon: AuditorIcon, section: "management" },
   { href: "/roles-permissions", label: "Roles & Permissions", icon: PermissionsIcon, section: "management" },
-  { href: "/business-settings", label: "Business Settings", icon: SettingsIcon, section: "settings" },
+  { href: "/subscription-plans", label: "Subscription Plan", icon: SubscriptionIcon, section: "management" },
+  { href: "/subscribers", label: "Subscribers", icon: SubscribersIcon, section: "management" },
   { href: "/payment-settings", label: "Payment Settings", icon: PaymentIcon, section: "settings" },
+  { href: "/mobile-settings", label: "Mobile Settings", icon: MobileIcon, section: "settings" },
 ];
 
 // Icon Components
@@ -120,6 +123,38 @@ function PaymentIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  );
+}
+
+function SubscriptionIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  );
+}
+
+function SubscribersIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  );
+}
+
+function MobileIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+    </svg>
+  );
+}
+
+function TeamIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
     </svg>
   );
 }

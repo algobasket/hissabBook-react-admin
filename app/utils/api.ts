@@ -2,7 +2,7 @@
 // NOTE: This admin app uses ONLY hissabbook-nodejs-backend (port 5000)
 // It does NOT use hissabbook-api-system
 
-import { getAuthToken } from "./auth";
+import { getAuthToken, setAuth } from "./auth";
 
 // For local development, use localhost:5000 directly
 // For production (with nginx), use /backend
@@ -18,10 +18,72 @@ export interface ApiError {
   error?: any;
 }
 
+// Helper function to check if token is about to expire (within 1 hour)
+function isTokenExpiringSoon(token: string | null): boolean {
+  if (!token) return false;
+  try {
+    // JWT tokens have 3 parts: header.payload.signature
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+    
+    // Decode the payload (base64)
+    const payload = JSON.parse(atob(parts[1]));
+    const exp = payload.exp; // Expiration time in seconds
+    
+    if (!exp) return false;
+    
+    // Check if token expires within 1 hour (3600 seconds)
+    const now = Math.floor(Date.now() / 1000);
+    const timeUntilExpiry = exp - now;
+    
+    return timeUntilExpiry < 3600 && timeUntilExpiry > 0;
+  } catch {
+    return false;
+  }
+}
+
+// Helper function to refresh token proactively
+async function refreshTokenIfNeeded(): Promise<boolean> {
+  const token = getAuthToken();
+  if (!token) return false;
+  
+  // Check if token is expiring soon
+  if (!isTokenExpiringSoon(token)) return false;
+  
+  try {
+    const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") ||
+      (typeof window !== "undefined" && window.location.hostname === "localhost"
+        ? "http://localhost:5000"
+        : "/backend");
+    
+    const refreshResponse = await fetch(`${API_BASE}/api/auth/refresh-token`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (refreshResponse.ok) {
+      const refreshData = await refreshResponse.json();
+      if (refreshData.token && refreshData.user) {
+        setAuth(refreshData.token, refreshData.user);
+        return true;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to refresh token proactively:', error);
+  }
+  
+  return false;
+}
+
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  // Proactively refresh token if it's expiring soon
+  await refreshTokenIfNeeded();
+  
   const token = getAuthToken();
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string> || {}),
@@ -55,6 +117,51 @@ export async function apiRequest<T>(
   }
 
   if (!response.ok) {
+    // Handle 401 Unauthorized - try to refresh token
+    if (response.status === 401 && getAuthToken()) {
+      try {
+        // Try to refresh the token
+        const refreshResponse = await fetch(`${API_BASE}/api/auth/refresh-token`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${getAuthToken()}`,
+          },
+        });
+
+        if (refreshResponse.ok) {
+          const refreshData = await refreshResponse.json();
+          // Update token using setAuth utility
+          if (refreshData.token && refreshData.user) {
+            setAuth(refreshData.token, refreshData.user);
+          }
+          
+          // Retry the original request with new token
+          const retryHeaders: Record<string, string> = {
+            ...(options.headers as Record<string, string> || {}),
+            'Authorization': `Bearer ${refreshData.token}`,
+          };
+          if (options.body) {
+            retryHeaders['Content-Type'] = 'application/json';
+          }
+
+          const retryResponse = await fetch(url, {
+            ...options,
+            headers: retryHeaders,
+          });
+
+          if (retryResponse.ok) {
+            return retryResponse.json() as Promise<T>;
+          }
+        }
+      } catch (refreshError) {
+        // If refresh fails, clear auth and let the error propagate
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('adminAuthToken');
+          localStorage.removeItem('adminUser');
+        }
+      }
+    }
+
     let errorData: any = {};
     let responseText = '';
     try {
@@ -304,6 +411,7 @@ export interface PayoutRequest {
   updatedAt: string;
   userEmail: string;
   userPhone: string | null;
+  proofFilename?: string | null;
 }
 
 export interface PayoutRequestsResponse {
@@ -538,9 +646,51 @@ export interface DashboardPayoutQueueResponse {
   payoutRequests: DashboardPayoutRequest[];
 }
 
+export interface PaymentCurrencyResponse {
+  currency: string;
+}
+
+export interface UpdatePaymentCurrencyRequest {
+  currency: string;
+}
+
+export interface UpdatePaymentCurrencyResponse {
+  success: boolean;
+  message: string;
+  currency: string;
+}
+
+export const settingsApi = {
+  getPaymentCurrency: () => {
+    return apiRequest<PaymentCurrencyResponse>('/api/settings/payment-currency');
+  },
+
+  updatePaymentCurrency: (currency: string) => {
+    return apiRequest<UpdatePaymentCurrencyResponse>('/api/settings/payment-currency', {
+      method: 'PUT',
+      body: JSON.stringify({ currency }),
+    });
+  },
+};
+
+export interface ComprehensiveStats {
+  totalBusinesses: number;
+  totalCashbooks: number;
+  totalManagers: number;
+  totalStaffs: number;
+  totalPayoutRequests: number;
+  totalCashIn: number;
+  totalCashOut: number;
+}
+
 export const dashboardApi = {
-  getStats: () => {
-    return apiRequest<DashboardStatsResponse>("/api/dashboard/stats");
+  getStats: (dateFilter?: 'all' | 'today') => {
+    const params = new URLSearchParams();
+    if (dateFilter) {
+      params.append('date_filter', dateFilter);
+    }
+    const queryString = params.toString();
+    return apiRequest<DashboardStatsResponse>(`/api/dashboard/stats${queryString ? `?${queryString}` : ''}`);
   },
   getPayoutQueue: (status?: string, limit?: number) => {
     const params = new URLSearchParams();
@@ -548,6 +698,14 @@ export const dashboardApi = {
     if (limit) params.append('limit', limit.toString());
     const queryString = params.toString();
     return apiRequest<DashboardPayoutQueueResponse>(`/api/dashboard/payout-queue${queryString ? `?${queryString}` : ''}`);
+  },
+  getComprehensiveStats: (dateFilter?: 'all' | 'today') => {
+    const params = new URLSearchParams();
+    if (dateFilter) {
+      params.append('date_filter', dateFilter);
+    }
+    const queryString = params.toString();
+    return apiRequest<ComprehensiveStats>(`/api/dashboard/comprehensive-stats${queryString ? `?${queryString}` : ''}`);
   },
 };
 
@@ -616,6 +774,116 @@ export const businessesApi = {
     return apiRequest<DeleteBusinessResponse>(`/api/businesses/${id}`, {
       method: "DELETE",
     });
+  },
+};
+
+// Subscription Plans API
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  currencyCode: string;
+  billingPeriod: string;
+  businessLimit: number | string;
+  membersPerBusinessLimit: number | string;
+  features: any;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubscriptionPlansResponse {
+  plans: SubscriptionPlan[];
+}
+
+export interface UpdateSubscriptionPlanRequest {
+  name?: string;
+  description?: string;
+  price?: number;
+  billingPeriod?: string;
+  businessLimit?: number;
+  membersPerBusinessLimit?: number;
+  features?: any;
+  isActive?: boolean;
+}
+
+export interface UpdateSubscriptionPlanResponse {
+  success: boolean;
+  plan: SubscriptionPlan;
+}
+
+export const subscriptionPlansApi = {
+  getAll: () => {
+    return apiRequest<SubscriptionPlansResponse>("/api/subscriptions/plans");
+  },
+  update: (id: string, data: UpdateSubscriptionPlanRequest) => {
+    return apiRequest<UpdateSubscriptionPlanResponse>(`/api/subscriptions/plans/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+// Subscribers API
+export interface Subscriber {
+  id: string;
+  businessId: string;
+  businessName: string;
+  planId: string;
+  planName: string;
+  status: string;
+  startDate: string;
+  endDate: string | null;
+  billingPeriod: string;
+  autoRenew: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubscribersResponse {
+  subscribers: Subscriber[];
+}
+
+export const subscribersApi = {
+  getAll: () => {
+    return apiRequest<SubscribersResponse>("/api/subscriptions/subscribers");
+  },
+};
+
+// Invites API
+export interface Invite {
+  id: string;
+  businessId: string;
+  businessName: string;
+  email: string | null;
+  phone: string | null;
+  role: string;
+  inviteToken: string;
+  status: string;
+  invitedBy: string;
+  inviterEmail: string | null;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
+  acceptedAt: string | null;
+  acceptedBy: string | null;
+  acceptedUserEmail?: string | null;
+  userInviteStatus?: string | null;
+}
+
+export interface InvitesResponse {
+  invites: Invite[];
+}
+
+export const invitesApi = {
+  getAll: (status?: string) => {
+    const params = new URLSearchParams();
+    if (status && status !== 'all') {
+      params.append('status', status);
+    }
+    const queryString = params.toString();
+    return apiRequest<InvitesResponse>(`/api/invites${queryString ? `?${queryString}` : ''}`);
   },
 };
 

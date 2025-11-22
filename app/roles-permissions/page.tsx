@@ -117,9 +117,9 @@ export default function RolesPermissionsPage() {
   return (
     <div className="flex min-h-screen bg-slate-100">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto overflow-x-auto">
         <Header />
-        <section className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-10">
+        <section className="mx-auto flex w-full max-w-[95vw] flex-col gap-8 px-6 py-10">
           <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-panel">
             <div className="mb-6">
               <h2 className="text-2xl font-semibold text-dark">Roles & Permissions</h2>
@@ -173,28 +173,28 @@ export default function RolesPermissionsPage() {
                         <div className="text-slate-600">Loading permissions...</div>
                       </div>
                     ) : (
-                      <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {Object.entries(groupedPermissions).map(([category, perms]) => (
-                          <div key={category} className="rounded-xl border border-slate-200 bg-slate-50 p-6">
-                            <h3 className="mb-4 text-lg font-semibold text-[#1f2937]">{category}</h3>
-                            <div className="space-y-3">
+                          <div key={category} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                            <h3 className="mb-3 text-base font-semibold text-[#1f2937] sticky top-0 bg-slate-50 py-2 z-10">{category}</h3>
+                            <div className="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto">
                               {perms.map((permission) => (
                                 <label
                                   key={permission.id}
-                                  className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-4 hover:bg-slate-50 cursor-pointer"
+                                  className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white p-3 hover:bg-slate-50 cursor-pointer"
                                 >
                                   <input
                                     type="checkbox"
                                     checked={permission.granted}
                                     onChange={() => handlePermissionToggle(permission.id)}
-                                    className="mt-1 h-4 w-4 rounded border-slate-300 text-[#2f4bff] focus:ring-2 focus:ring-[#2f4bff]"
+                                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#2f4bff] focus:ring-2 focus:ring-[#2f4bff] flex-shrink-0"
                                   />
-                                  <div className="flex-1">
-                                    <div className="font-medium text-[#1f2937]">{permission.name}</div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-sm text-[#1f2937]">{permission.name}</div>
                                     {permission.description && (
-                                      <div className="mt-1 text-sm text-slate-500">{permission.description}</div>
+                                      <div className="mt-0.5 text-xs text-slate-500 line-clamp-2">{permission.description}</div>
                                     )}
-                                    <div className="mt-1 text-xs text-slate-400 font-mono">{permission.code}</div>
+                                    <div className="mt-1 text-xs text-slate-400 font-mono truncate">{permission.code}</div>
                                   </div>
                                 </label>
                               ))}
