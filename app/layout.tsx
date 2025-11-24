@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 
 const inter = Inter({
   variable: "--font-geist-sans",
@@ -27,7 +28,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <AdminProtectedRoute>
+          {children}
+        </AdminProtectedRoute>
       </body>
     </html>
   );

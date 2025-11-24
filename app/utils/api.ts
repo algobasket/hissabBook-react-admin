@@ -428,6 +428,11 @@ export interface UpdateStatusResponse {
   request: PayoutRequest;
 }
 
+export interface DeletePayoutRequestResponse {
+  success: boolean;
+  message: string;
+}
+
 export const payoutRequestsApi = {
   getAll: (status?: string) => {
     const params = status && status !== "all" ? `?status=${encodeURIComponent(status)}` : "";
@@ -438,6 +443,11 @@ export const payoutRequestsApi = {
     apiRequest<UpdateStatusResponse>(`/api/payout-requests/${id}/status`, {
       method: "PATCH",
       body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    apiRequest<DeletePayoutRequestResponse>(`/api/payout-requests/${id}`, {
+      method: "DELETE",
     }),
 };
 
@@ -593,6 +603,11 @@ export interface TransactionsResponse {
   transactions: Transaction[];
 }
 
+export interface DeleteTransactionResponse {
+  success: boolean;
+  message: string;
+}
+
 export const transactionsApi = {
   getAll: (filters?: { type?: string; status?: string; limit?: number; offset?: number }) => {
     const params = new URLSearchParams();
@@ -613,6 +628,11 @@ export const transactionsApi = {
     const queryString = params.toString();
     return apiRequest<TransactionsResponse>(`/api/transactions/book/${bookId}${queryString ? `?${queryString}` : ''}`);
   },
+
+  delete: (id: string) =>
+    apiRequest<DeleteTransactionResponse>(`/api/transactions/${id}`, {
+      method: "DELETE",
+    }),
 };
 
 // Dashboard API

@@ -90,7 +90,7 @@ export default function WalletsPage() {
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
         <Header />
-        <section className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
+        <section className="mx-auto flex w-full flex-col gap-8 px-6 py-10">
           <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-panel">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <h2 className="text-lg font-semibold text-dark">User Wallets</h2>
@@ -114,12 +114,12 @@ export default function WalletsPage() {
                 <table className="min-w-full divide-y divide-slate-100 text-sm">
                   <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <tr>
-                      <th className="px-4 py-3">Mobile Number</th>
                       <th className="px-4 py-3">First Name</th>
                       <th className="px-4 py-3">Last Name</th>
                       <th className="px-4 py-3">UPI ID</th>
-                      <th className="px-4 py-3">Email ID</th>
                       <th className="px-4 py-3 text-right">Amount</th>
+                      <th className="px-4 py-3">Email ID</th>
+                      <th className="px-4 py-3">Mobile Number</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white text-slate-600">
@@ -132,7 +132,6 @@ export default function WalletsPage() {
                     ) : (
                       wallets.map((wallet) => (
                         <tr key={wallet.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-4 py-4">{formatPhone(wallet.phone)}</td>
                           <td className="px-4 py-4 font-medium text-dark">
                             {wallet.firstName || "-"}
                           </td>
@@ -146,12 +145,13 @@ export default function WalletsPage() {
                               <span className="text-slate-400">-</span>
                             )}
                           </td>
-                          <td className="px-4 py-4">{wallet.email}</td>
                           <td className="px-4 py-4 text-right">
                             <span className="font-semibold text-dark">
                               {formatAmount(wallet.balance)}
                             </span>
                           </td>
+                          <td className="px-4 py-4">{wallet.email}</td>
+                          <td className="px-4 py-4">{formatPhone(wallet.phone)}</td>
                         </tr>
                       ))
                     )}

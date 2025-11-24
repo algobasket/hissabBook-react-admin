@@ -21,6 +21,20 @@ export default function LoginForm() {
     try {
       const response = await authApi.login({ email, password });
       
+      // Check if user has admin role
+      const userRole = response.user.role || response.user.roles?.[0];
+      const isAdmin = userRole === "admin" || response.user.roles?.includes("admin");
+      
+      if (!isAdmin) {
+        setError("Access denied. Only administrators can access the admin console.");
+        // Clear any partial auth data
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("adminAuthToken");
+          localStorage.removeItem("adminUser");
+        }
+        return;
+      }
+      
       // Store authentication data
       setAuth(response.token, response.user);
 

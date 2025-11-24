@@ -92,6 +92,30 @@ export default function ApprovalsPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (processingId) return;
+
+    // Confirm deletion
+    if (!confirm("Are you sure you want to delete this payout request? This action cannot be undone.")) {
+      return;
+    }
+
+    setProcessingId(id);
+    setError(null);
+    try {
+      await payoutRequestsApi.delete(id);
+
+      // Refresh the list
+      await fetchPayoutRequests();
+    } catch (err: any) {
+      console.error("Error deleting payout request:", err);
+      const errorMessage = err?.message || err?.error?.message || err?.error || "Failed to delete request";
+      setError(errorMessage);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   if (!mounted) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-100">
@@ -255,26 +279,34 @@ export default function ApprovalsPage() {
                               {formatDate(request.updatedAt)}
                             </td>
                             <td className="px-4 py-4">
-                              {request.status === "pending" ? (
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => handleStatusUpdate(request.id, "accepted")}
-                                    disabled={processingId === request.id}
-                                    className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                  >
-                                    {processingId === request.id ? "Processing..." : "Accept"}
-                                  </button>
-                                  <button
-                                    onClick={() => handleStatusUpdate(request.id, "rejected")}
-                                    disabled={processingId === request.id}
-                                    className="rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                  >
-                                    {processingId === request.id ? "Processing..." : "Reject"}
-                                  </button>
-                                </div>
-                              ) : (
-                                <span className="text-xs text-slate-400">No actions</span>
-                              )}
+                              <div className="flex items-center gap-2">
+                                {request.status === "pending" && (
+                                  <>
+                                    <button
+                                      onClick={() => handleStatusUpdate(request.id, "accepted")}
+                                      disabled={processingId === request.id}
+                                      className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                      {processingId === request.id ? "Processing..." : "Accept"}
+                                    </button>
+                                    <button
+                                      onClick={() => handleStatusUpdate(request.id, "rejected")}
+                                      disabled={processingId === request.id}
+                                      className="rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                      {processingId === request.id ? "Processing..." : "Reject"}
+                                    </button>
+                                  </>
+                                )}
+                                <button
+                                  onClick={() => handleDelete(request.id)}
+                                  disabled={processingId === request.id}
+                                  className="rounded-lg bg-slate-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  title="Delete payout request"
+                                >
+                                  {processingId === request.id ? "Processing..." : "Delete"}
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );

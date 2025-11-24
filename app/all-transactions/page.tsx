@@ -15,6 +15,7 @@ export default function AllTransactionsPage() {
   const [mounted, setMounted] = useState(false);
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -56,6 +57,30 @@ export default function AllTransactionsPage() {
       .finally(() => {
         setLoading(false);
       });
+  };
+
+  const handleDelete = async (id: string) => {
+    if (processingId) return;
+
+    // Confirm deletion
+    if (!confirm("Are you sure you want to delete this transaction? This action cannot be undone.")) {
+      return;
+    }
+
+    setProcessingId(id);
+    setError(null);
+    try {
+      await transactionsApi.delete(id);
+
+      // Refresh the list
+      fetchTransactions();
+    } catch (err: any) {
+      console.error("Error deleting transaction:", err);
+      const errorMessage = err?.message || err?.error?.message || err?.error || "Failed to delete transaction";
+      setError(errorMessage);
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   if (!mounted) {
@@ -139,7 +164,7 @@ export default function AllTransactionsPage() {
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
         <Header />
-        <section className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
+        <section className="mx-auto flex w-full flex-col gap-8 px-6 py-10">
           <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-panel">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <h2 className="text-lg font-semibold text-dark">All Transactions</h2>
@@ -199,12 +224,13 @@ export default function AllTransactionsPage() {
                       <th className="px-4 py-3 text-right">Amount</th>
                       <th className="px-4 py-3">Status</th>
                       <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white text-slate-600">
                     {transactions.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                        <td colSpan={9} className="px-4 py-8 text-center text-slate-500">
                           No transactions found
                         </td>
                       </tr>
@@ -243,6 +269,16 @@ export default function AllTransactionsPage() {
                           </td>
                           <td className="px-4 py-4 text-slate-500">
                             {formatDate(transaction.occurredAt)}
+                          </td>
+                          <td className="px-4 py-4">
+                            <button
+                              onClick={() => handleDelete(transaction.id)}
+                              disabled={processingId === transaction.id}
+                              className="rounded-lg bg-slate-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              title="Delete transaction"
+                            >
+                              {processingId === transaction.id ? "Processing..." : "Delete"}
+                            </button>
                           </td>
                         </tr>
                       ))
