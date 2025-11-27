@@ -1,13 +1,39 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import LoginForm from "../components/LoginForm";
 import FloatingBook from "../components/FloatingBooks";
 
-export const metadata: Metadata = {
-  title: "HissabBook Admin • Login",
-  description: "Admin Console Login - Use your organisation email and secure passcode to continue",
-};
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") || 
+  (typeof window !== "undefined" && window.location.hostname === "localhost"
+    ? "http://localhost:5000"
+    : "/backend");
 
 export default function LoginPage() {
+  const [smallLogoUrl, setSmallLogoUrl] = useState<string | null>(null);
+
+  // Fetch small logo from site settings
+  useEffect(() => {
+    const fetchSmallLogo = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/settings/site/public`);
+        if (response.ok) {
+          const siteSettings = await response.json();
+          if (siteSettings.smallLogoUrl) {
+            const logoUrl = siteSettings.smallLogoUrl.startsWith('http') 
+              ? siteSettings.smallLogoUrl 
+              : `${API_BASE}/uploads/${siteSettings.smallLogoUrl}`;
+            setSmallLogoUrl(logoUrl);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch small logo:", err);
+        // Continue without logo - will show fallback
+      }
+    };
+    fetchSmallLogo();
+  }, []);
   return (
     <div className="flex min-h-screen flex-col lg:flex-row bg-slate-50 relative overflow-hidden">
       {/* Left Sidebar - Enhanced */}
@@ -31,15 +57,33 @@ export default function LoginPage() {
         
         <div className="flex flex-col justify-between relative z-10">
           <div>
-            <div className="flex items-center gap-3 text-2xl font-bold mb-16">
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm text-2xl font-bold shadow-lg border border-white/30">
-                H
-              </span>
-              <div>
-                <div className="text-white font-bold">HissabBook</div>
-                <div className="text-white/80 text-sm font-medium">Admin Console</div>
+            <Link href="/" className="flex items-center gap-3 text-2xl font-bold mb-16 transition-transform hover:scale-105">
+              {smallLogoUrl ? (
+                <img
+                  src={smallLogoUrl}
+                  alt="HissabBook"
+                  className="h-[68px] w-auto object-contain cursor-pointer"
+                  onError={(e) => {
+                    // Fallback to default logo if image fails to load
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) {
+                      const fallback = parent.querySelector('.logo-fallback');
+                      if (fallback) fallback.classList.remove('hidden');
+                    }
+                  }}
+                />
+              ) : null}
+              <div className={`logo-fallback flex items-center gap-3 ${smallLogoUrl ? 'hidden' : ''}`}>
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm text-2xl font-bold shadow-lg border border-white/30">
+                  H
+                </span>
+                <div>
+                  <div className="text-white font-bold">HissabBook</div>
+                  <div className="text-white/80 text-sm font-medium">Admin Console</div>
+                </div>
               </div>
-            </div>
+            </Link>
             <h1 className="text-5xl font-bold leading-tight mb-6">
               Control finance operations with role-based guardrails.
             </h1>
@@ -109,9 +153,29 @@ export default function LoginPage() {
         <div className="w-full max-w-md relative z-10">
           <div className="rounded-[32px] bg-white p-10 shadow-2xl border border-slate-100">
             <div className="space-y-4 text-center mb-8">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-indigo-600 text-2xl font-bold text-white shadow-lg">
-                H
-              </div>
+              {smallLogoUrl ? (
+                <Link href="/" className="mx-auto block transition-transform hover:scale-105">
+                  <img
+                    src={smallLogoUrl}
+                    alt="HissabBook"
+                    className="h-16 w-auto object-contain mx-auto cursor-pointer"
+                    onError={(e) => {
+                      // Fallback to default logo if image fails to load
+                      e.currentTarget.style.display = 'none';
+                      const parent = e.currentTarget.parentElement?.parentElement;
+                      if (parent) {
+                        const fallback = parent.querySelector('.logo-fallback');
+                        if (fallback) fallback.classList.remove('hidden');
+                      }
+                    }}
+                  />
+                </Link>
+              ) : null}
+              <Link href="/" className={`logo-fallback block ${smallLogoUrl ? 'hidden' : ''}`}>
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-indigo-600 text-2xl font-bold text-white shadow-lg transition-transform hover:scale-105 cursor-pointer">
+                  H
+                </div>
+              </Link>
               <div>
                 <h2 className="text-3xl font-bold text-slate-900">Admin Console Login</h2>
                 <p className="mt-2 text-sm text-slate-600">

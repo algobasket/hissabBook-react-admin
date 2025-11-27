@@ -110,7 +110,7 @@ export async function apiRequest<T>(
   } catch (fetchError: any) {
     console.error(`[API] Fetch failed for ${options.method || 'GET'} ${url}:`, fetchError);
     const error: ApiError = {
-      message: fetchError.message || 'Failed to fetch - check if backend server is running',
+      message: fetchError.message || `Failed to fetch - Network error. Please check if the backend server is running at ${API_BASE}`,
       error: fetchError,
     };
     throw error;
@@ -681,6 +681,35 @@ export interface UpdatePaymentCurrencyResponse {
 }
 
 export const settingsApi = {
+  getSiteSettings: async () => {
+    return apiRequest<{
+      siteName?: string;
+      siteDescription?: string;
+      siteEmail?: string;
+      sitePhone?: string;
+      siteAddress?: string;
+      siteLogoUrl?: string;
+      smallLogoUrl?: string;
+      bigLogoUrl?: string;
+    }>("/api/settings/site", {
+      method: "GET",
+    });
+  },
+  updateSiteSettings: async (data: {
+    siteName?: string;
+    siteDescription?: string;
+    siteEmail?: string;
+    sitePhone?: string;
+    siteAddress?: string;
+    siteLogo?: string | null;
+    smallLogo?: string | null;
+    bigLogo?: string | null;
+  }) => {
+    return apiRequest<{ message: string }>("/api/settings/site", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
   getPaymentCurrency: () => {
     return apiRequest<PaymentCurrencyResponse>('/api/settings/payment-currency');
   },
