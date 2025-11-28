@@ -234,9 +234,16 @@ export default function ApprovalsPage() {
                         // Check for proofFilename in multiple possible field names
                         const proofFilename = request.proofFilename || (request as any).proof_filename || null;
                         
-                        const proofUrl = proofFilename 
-                          ? `${API_BASE}/uploads/${proofFilename}`
-                          : null;
+                        // Construct proof URL - handle cases where filename might already include path
+                        let proofUrl = null;
+                        if (proofFilename) {
+                          let filename = proofFilename;
+                          // Remove any existing /uploads/ or /backend/uploads/ prefix
+                          filename = filename.replace(/^\/?(backend\/)?uploads\//, '');
+                          // Normalize API_BASE (remove trailing slash)
+                          const apiBaseNormalized = API_BASE.replace(/\/$/, '');
+                          proofUrl = `${apiBaseNormalized}/uploads/${filename}`;
+                        }
 
                         return (
                           <tr key={request.id} className="hover:bg-slate-50 transition-colors">
