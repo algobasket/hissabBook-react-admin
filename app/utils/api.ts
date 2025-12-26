@@ -691,6 +691,11 @@ export const settingsApi = {
       siteLogoUrl?: string;
       smallLogoUrl?: string;
       bigLogoUrl?: string;
+      googlePlayUrl?: string;
+      appStoreUrl?: string;
+      apkDownloadUrl?: string;
+      apkVersion?: string;
+      apkFileSize?: string;
     }>("/api/settings/site", {
       method: "GET",
     });
@@ -704,6 +709,12 @@ export const settingsApi = {
     siteLogo?: string | null;
     smallLogo?: string | null;
     bigLogo?: string | null;
+    googlePlayUrl?: string;
+    appStoreUrl?: string;
+    apkDownloadUrl?: string;
+    apkFile?: string; // base64 data URL for APK upload
+    apkVersion?: string;
+    apkFileSize?: string;
   }) => {
     return apiRequest<{ message: string }>("/api/settings/site", {
       method: "PUT",
@@ -720,7 +731,25 @@ export const settingsApi = {
       body: JSON.stringify({ currency }),
     });
   },
+  getApkVersions: () => {
+    return apiRequest<ApkVersionsResponse>('/api/settings/apk-versions');
+  },
 };
+
+export interface ApkVersion {
+  id: string;
+  version: string;
+  filename: string;
+  fileSize?: string;
+  downloadUrl?: string;
+  isCurrent: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApkVersionsResponse {
+  versions: ApkVersion[];
+}
 
 export interface ComprehensiveStats {
   totalBusinesses: number;
