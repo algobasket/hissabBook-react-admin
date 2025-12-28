@@ -171,7 +171,10 @@ export default function MobileSettingsPage() {
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       console.error("Error updating mobile app settings:", err);
-      setError(err?.message || "Failed to update mobile app settings");
+      // Show detailed error message if available
+      // The apiRequest throws an error with structure: { message, status, error: { message, error, ... } }
+      const errorMessage = err?.error?.error || err?.error?.message || err?.message || "Failed to update mobile app settings";
+      setError(errorMessage);
     } finally {
       setSaving(false);
     }
