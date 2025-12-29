@@ -52,26 +52,29 @@ export default function MaintainancePage() {
       });
       
       // Ensure booleans are properly converted - handle all possible formats
+      // The API might return strings, numbers, or booleans, so we need to handle all cases
+      const blockStaffValue: unknown = data.blockStaff;
       let blockStaff = false;
-      if (typeof data.blockStaff === 'boolean') {
-        blockStaff = data.blockStaff;
-      } else if (typeof data.blockStaff === 'string') {
-        blockStaff = data.blockStaff.toLowerCase() === 'true' || data.blockStaff === '1';
-      } else if (typeof data.blockStaff === 'number') {
-        blockStaff = data.blockStaff === 1;
+      if (typeof blockStaffValue === 'boolean') {
+        blockStaff = blockStaffValue;
+      } else if (typeof blockStaffValue === 'string') {
+        blockStaff = blockStaffValue.toLowerCase() === 'true' || blockStaffValue === '1';
+      } else if (typeof blockStaffValue === 'number') {
+        blockStaff = blockStaffValue === 1;
       } else {
-        blockStaff = Boolean(data.blockStaff);
+        blockStaff = Boolean(blockStaffValue);
       }
       
+      const blockManagerValue: unknown = data.blockManager;
       let blockManager = false;
-      if (typeof data.blockManager === 'boolean') {
-        blockManager = data.blockManager;
-      } else if (typeof data.blockManager === 'string') {
-        blockManager = data.blockManager.toLowerCase() === 'true' || data.blockManager === '1';
-      } else if (typeof data.blockManager === 'number') {
-        blockManager = data.blockManager === 1;
+      if (typeof blockManagerValue === 'boolean') {
+        blockManager = blockManagerValue;
+      } else if (typeof blockManagerValue === 'string') {
+        blockManager = blockManagerValue.toLowerCase() === 'true' || blockManagerValue === '1';
+      } else if (typeof blockManagerValue === 'number') {
+        blockManager = blockManagerValue === 1;
       } else {
-        blockManager = Boolean(data.blockManager);
+        blockManager = Boolean(blockManagerValue);
       }
       
       console.log('Converted values:', { blockStaff, blockManager });
