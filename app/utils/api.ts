@@ -162,24 +162,37 @@ export async function apiRequest<T>(
       }
     }
 
+    // Read error response (clone first so we can read it)
     let errorData: any = {};
     let responseText = '';
     try {
-      responseText = await response.text();
+      const clonedResponse = response.clone();
+      responseText = await clonedResponse.text();
       if (responseText) {
-        errorData = JSON.parse(responseText);
+        try {
+          errorData = JSON.parse(responseText);
+        } catch {
+          // If not JSON, use as plain text
+          errorData = { message: responseText || response.statusText || `HTTP error! status: ${response.status}`, raw: responseText };
+        }
+      } else {
+        errorData = { message: response.statusText || `HTTP error! status: ${response.status}` };
       }
-    } catch {
-      // If response is not JSON, use status text
-      errorData = { message: response.statusText || `HTTP error! status: ${response.status}`, raw: responseText };
+    } catch (parseError) {
+      // If we can't read the response, use status info
+      errorData = { message: response.statusText || `HTTP error! status: ${response.status}` };
     }
     
     const error: ApiError = {
-      message: errorData.message || errorData.error || `HTTP error! status: ${response.status}`,
+      message: errorData.message || errorData.error || errorData.detail || `HTTP error! status: ${response.status}`,
       status: response.status,
       error: errorData,
     };
-    console.error(`[API Error] ${options.method || 'GET'} ${url} - Status: ${response.status}`, errorData);
+    console.error(`[API Error] ${options.method || 'GET'} ${url} - Status: ${response.status}`, {
+      errorData,
+      responseText,
+      fullError: error
+    });
     throw error;
   }
 
@@ -416,6 +429,12 @@ export interface PayoutRequest {
 
 export interface PayoutRequestsResponse {
   payoutRequests: PayoutRequest[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export interface UpdateStatusRequest {
@@ -434,14 +453,30 @@ export interface DeletePayoutRequestResponse {
 }
 
 export const payoutRequestsApi = {
-  getAll: (status?: string) => {
-    const params = status && status !== "all" ? `?status=${encodeURIComponent(status)}` : "";
-    return apiRequest<PayoutRequestsResponse>(`/api/payout-requests${params}`);
+  getAll: (status?: string, page?: number, limit?: number) => {
+    const params = new URLSearchParams();
+    if (status && status !== "all") {
+      params.append("status", status);
+    }
+    if (page) {
+      params.append("page", page.toString());
+    }
+    if (limit) {
+      params.append("limit", limit.toString());
+    }
+    const queryString = params.toString();
+    return apiRequest<PayoutRequestsResponse>(`/api/payout-requests${queryString ? `?${queryString}` : ""}`);
   },
 
   updateStatus: (id: string, data: UpdateStatusRequest) =>
     apiRequest<UpdateStatusResponse>(`/api/payout-requests/${id}/status`, {
       method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: { amount: number; utr: string; remarks: string; proof?: string }) =>
+    apiRequest<{ payoutRequest: PayoutRequest; message: string }>(`/api/payout-requests/${id}`, {
+      method: "PUT",
       body: JSON.stringify(data),
     }),
 
@@ -680,6 +715,19 @@ export interface UpdatePaymentCurrencyResponse {
   currency: string;
 }
 
+export interface MaintenanceSettings {
+  title: string;
+  message: string;
+  blockStaff: boolean;
+  blockManager: boolean;
+}
+
+export interface MaintenanceSettingsResponse {
+  success?: boolean;
+  message?: string;
+  settings?: MaintenanceSettings;
+}
+
 export const settingsApi = {
   getSiteSettings: async () => {
     return apiRequest<{
@@ -698,6 +746,17 @@ export const settingsApi = {
       apkFileSize?: string;
     }>("/api/settings/site", {
       method: "GET",
+    });
+  },
+  getMaintenanceSettings: async () => {
+    return apiRequest<MaintenanceSettings>("/api/settings/maintenance", {
+      method: "GET",
+    });
+  },
+  updateMaintenanceSettings: async (data: MaintenanceSettings) => {
+    return apiRequest<MaintenanceSettingsResponse>("/api/settings/maintenance", {
+      method: "PUT",
+      body: JSON.stringify(data),
     });
   },
   updateSiteSettings: async (data: {
@@ -733,6 +792,66 @@ export const settingsApi = {
   },
   getApkVersions: () => {
     return apiRequest<ApkVersionsResponse>('/api/settings/apk-versions');
+  },
+};
+
+// Blog Posts API
+export interface BlogPost {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string | null;
+}
+
+export interface BlogPostsResponse {
+  blogPosts: BlogPost[];
+}
+
+export interface CreateBlogPostRequest {
+  title: string;
+  description: string;
+  category?: string;
+}
+
+export interface CreateBlogPostResponse {
+  blogPost: BlogPost;
+  message: string;
+}
+
+export interface UpdateBlogPostRequest {
+  title: string;
+  description: string;
+  category?: string;
+}
+
+export interface DeleteBlogPostResponse {
+  success: boolean;
+  message: string;
+}
+
+export const blogPostsApi = {
+  getAll: () => {
+    return apiRequest<BlogPostsResponse>('/api/blog-posts');
+  },
+  create: (data: CreateBlogPostRequest) => {
+    return apiRequest<CreateBlogPostResponse>('/api/blog-posts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  update: (id: string, data: UpdateBlogPostRequest) => {
+    return apiRequest<CreateBlogPostResponse>(`/api/blog-posts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+  delete: (id: string) => {
+    return apiRequest<DeleteBlogPostResponse>(`/api/blog-posts/${id}`, {
+      method: 'DELETE',
+    });
   },
 };
 

@@ -27,6 +27,8 @@ const navItems: NavItem[] = [
   { href: "/site-settings", label: "Site Settings", icon: SiteSettingsIcon, section: "settings" },
   { href: "/payment-settings", label: "Payment Settings", icon: PaymentIcon, section: "settings" },
   { href: "/mobile-settings", label: "Mobile Settings", icon: MobileIcon, section: "settings" },
+  { href: "/maintainance", label: "Maintainance", icon: MaintainanceIcon, section: "settings" },
+  { href: "/blog-content", label: "Blog Content", icon: BlogContentIcon, section: "settings" },
 ];
 
 // Icon Components
@@ -156,6 +158,22 @@ function MobileIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+    </svg>
+  );
+}
+
+function MaintainanceIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655-5.653a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h11.25A2.25 2.25 0 0018 18V9.957c0-.299-.119-.585-.33-.796l-4.655-5.653a1.125 1.125 0 00-1.091-.852H9.5a2.25 2.25 0 00-2.25 2.25v.041M11.42 15.17l-2.496 3.031a2.652 2.652 0 01-3.458.774l-1.748-1.748a2.652 2.652 0 00-1.748-.774l-3.114-3.114a2.652 2.652 0 00-1.748-.774l-1.748-1.748a2.652 2.652 0 01.774-3.458l3.114-3.114a2.652 2.652 0 00.774-1.748l1.748-1.748a2.652 2.652 0 013.458-.774l2.496 3.031" />
+    </svg>
+  );
+}
+
+function BlogContentIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
     </svg>
   );
 }

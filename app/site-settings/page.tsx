@@ -33,14 +33,17 @@ export default function SiteSettingsPage() {
   const [siteLogo, setSiteLogo] = useState<File | null>(null);
   const [siteLogoPreview, setSiteLogoPreview] = useState<string | null>(null);
   const [siteLogoUrl, setSiteLogoUrl] = useState<string | null>(null);
+  const [siteLogoError, setSiteLogoError] = useState<boolean>(false);
   
   const [smallLogo, setSmallLogo] = useState<File | null>(null);
   const [smallLogoPreview, setSmallLogoPreview] = useState<string | null>(null);
   const [smallLogoUrl, setSmallLogoUrl] = useState<string | null>(null);
+  const [smallLogoError, setSmallLogoError] = useState<boolean>(false);
   
   const [bigLogo, setBigLogo] = useState<File | null>(null);
   const [bigLogoPreview, setBigLogoPreview] = useState<string | null>(null);
   const [bigLogoUrl, setBigLogoUrl] = useState<string | null>(null);
+  const [bigLogoError, setBigLogoError] = useState<boolean>(false);
 
   useEffect(() => {
     setMounted(true);
@@ -71,6 +74,10 @@ export default function SiteSettingsPage() {
       setSiteLogoUrl(data.siteLogoUrl ? (data.siteLogoUrl.startsWith('http') ? data.siteLogoUrl : `${API_BASE}/uploads/${data.siteLogoUrl}`) : null);
       setSmallLogoUrl(data.smallLogoUrl ? (data.smallLogoUrl.startsWith('http') ? data.smallLogoUrl : `${API_BASE}/uploads/${data.smallLogoUrl}`) : null);
       setBigLogoUrl(data.bigLogoUrl ? (data.bigLogoUrl.startsWith('http') ? data.bigLogoUrl : `${API_BASE}/uploads/${data.bigLogoUrl}`) : null);
+      // Reset error states when fetching new data
+      setSiteLogoError(false);
+      setSmallLogoError(false);
+      setBigLogoError(false);
     } catch (err: any) {
       console.error("Error fetching site settings:", err);
       // Don't show error if it's just that no settings exist yet (404)
@@ -84,6 +91,9 @@ export default function SiteSettingsPage() {
         setSiteLogoUrl(null);
         setSmallLogoUrl(null);
         setBigLogoUrl(null);
+        setSiteLogoError(false);
+        setSmallLogoError(false);
+        setBigLogoError(false);
       } else {
         setError(err?.message || "Failed to load site settings. Please check if the backend server is running.");
       }
@@ -153,11 +163,13 @@ export default function SiteSettingsPage() {
   const handleLogoUpload = async (
     file: File | null,
     setPreview: (preview: string | null) => void,
-    setFile: (file: File | null) => void
+    setFile: (file: File | null) => void,
+    resetError?: () => void
   ) => {
     if (!file) {
       setPreview(null);
       setFile(null);
+      if (resetError) resetError();
       return;
     }
 
@@ -184,6 +196,7 @@ export default function SiteSettingsPage() {
         setPreview(base64String);
         setFile(compressedFile);
         setError(null);
+        if (resetError) resetError();
       };
       reader.onerror = () => {
         setError("Failed to read image file");
@@ -239,6 +252,10 @@ export default function SiteSettingsPage() {
       setSiteLogoPreview(null);
       setSmallLogoPreview(null);
       setBigLogoPreview(null);
+      // Reset error states
+      setSiteLogoError(false);
+      setSmallLogoError(false);
+      setBigLogoError(false);
       
       // Switch back to view mode after successful save
       setIsEditMode(false);
@@ -405,7 +422,7 @@ export default function SiteSettingsPage() {
                               type="file"
                               accept="image/*"
                               className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                              onChange={(e) => handleLogoUpload(e.target.files?.[0] || null, setSiteLogoPreview, setSiteLogo)}
+                              onChange={(e) => handleLogoUpload(e.target.files?.[0] || null, setSiteLogoPreview, setSiteLogo, () => setSiteLogoError(false))}
                               disabled={saving}
                             />
                             <div className="pointer-events-none">
@@ -419,17 +436,26 @@ export default function SiteSettingsPage() {
                             </div>
                           </div>
                         </div>
-                        {(siteLogoPreview || siteLogoUrl) && (
+                        {((siteLogoPreview && siteLogoPreview.trim() !== '' && !siteLogoError) || (siteLogoUrl && siteLogoUrl.trim() !== '' && !siteLogoError)) ? (
                           <div className="flex-shrink-0">
                             <div className="relative h-24 w-24 rounded-lg border border-slate-200 bg-white p-2">
                               <img
                                 src={siteLogoPreview || siteLogoUrl || ""}
                                 alt="Site Logo Preview"
                                 className="h-full w-full object-contain"
+                                onError={() => {
+                                  setSiteLogoError(true);
+                                }}
                               />
                             </div>
                           </div>
-                        )}
+                        ) : (siteLogoPreview || siteLogoUrl) ? (
+                          <div className="flex-shrink-0">
+                            <div className="relative h-24 w-24 rounded-lg border border-slate-200 bg-white p-2 flex items-center justify-center">
+                              <p className="text-xs text-slate-400">No Logo</p>
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
 
@@ -445,7 +471,7 @@ export default function SiteSettingsPage() {
                               type="file"
                               accept="image/*"
                               className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                              onChange={(e) => handleLogoUpload(e.target.files?.[0] || null, setSmallLogoPreview, setSmallLogo)}
+                              onChange={(e) => handleLogoUpload(e.target.files?.[0] || null, setSmallLogoPreview, setSmallLogo, () => setSmallLogoError(false))}
                               disabled={saving}
                             />
                             <div className="pointer-events-none">
@@ -459,17 +485,26 @@ export default function SiteSettingsPage() {
                             </div>
                           </div>
                         </div>
-                        {(smallLogoPreview || smallLogoUrl) && (
+                        {((smallLogoPreview && smallLogoPreview.trim() !== '' && !smallLogoError) || (smallLogoUrl && smallLogoUrl.trim() !== '' && !smallLogoError)) ? (
                           <div className="flex-shrink-0">
                             <div className="relative h-24 w-24 rounded-lg border border-slate-200 bg-white p-2">
                               <img
                                 src={smallLogoPreview || smallLogoUrl || ""}
                                 alt="Small Logo Preview"
                                 className="h-full w-full object-contain"
+                                onError={() => {
+                                  setSmallLogoError(true);
+                                }}
                               />
                             </div>
                           </div>
-                        )}
+                        ) : (smallLogoPreview || smallLogoUrl) ? (
+                          <div className="flex-shrink-0">
+                            <div className="relative h-24 w-24 rounded-lg border border-slate-200 bg-white p-2 flex items-center justify-center">
+                              <p className="text-xs text-slate-400">No Logo</p>
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
 
@@ -485,7 +520,7 @@ export default function SiteSettingsPage() {
                               type="file"
                               accept="image/*"
                               className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                              onChange={(e) => handleLogoUpload(e.target.files?.[0] || null, setBigLogoPreview, setBigLogo)}
+                              onChange={(e) => handleLogoUpload(e.target.files?.[0] || null, setBigLogoPreview, setBigLogo, () => setBigLogoError(false))}
                               disabled={saving}
                             />
                             <div className="pointer-events-none">
@@ -499,7 +534,7 @@ export default function SiteSettingsPage() {
                             </div>
                           </div>
                         </div>
-                        {(bigLogoPreview || bigLogoUrl) && (
+                        {((bigLogoPreview && bigLogoPreview.trim() !== '' && !bigLogoError) || (bigLogoUrl && bigLogoUrl.trim() !== '' && !bigLogoError)) ? (
                           <div className="flex-shrink-0">
                             <div className="relative rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
                               <div className="relative h-32 w-32">
@@ -507,12 +542,24 @@ export default function SiteSettingsPage() {
                                   src={bigLogoPreview || bigLogoUrl || ""}
                                   alt="Big Logo Preview"
                                   className="h-full w-full object-contain"
+                                  onError={() => {
+                                    setBigLogoError(true);
+                                  }}
                                 />
                               </div>
                               <p className="mt-2 text-xs text-center text-slate-500">Preview</p>
                             </div>
                           </div>
-                        )}
+                        ) : (bigLogoPreview || bigLogoUrl) ? (
+                          <div className="flex-shrink-0">
+                            <div className="relative rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+                              <div className="relative h-32 w-32 flex items-center justify-center">
+                                <p className="text-xs text-slate-400">No Logo</p>
+                              </div>
+                              <p className="mt-2 text-xs text-center text-slate-500">Preview</p>
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -618,18 +665,25 @@ export default function SiteSettingsPage() {
                         <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
                           Small Logo
                         </label>
-                        {(smallLogoUrl || smallLogoPreview) ? (
+                        {((smallLogoUrl && smallLogoUrl.trim() !== '' && !smallLogoError) || (smallLogoPreview && smallLogoPreview.trim() !== '' && !smallLogoError)) ? (
                           <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
                             <div className="relative h-32 w-full">
                               <img
                                 src={smallLogoUrl || smallLogoPreview || ""}
                                 alt="Small Logo"
                                 className="h-full w-full object-contain"
+                                onError={() => {
+                                  setSmallLogoError(true);
+                                }}
                               />
                             </div>
                           </div>
                         ) : (
-                          <p className="text-sm text-slate-400">No logo uploaded</p>
+                          <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+                            <div className="relative h-32 w-full flex items-center justify-center">
+                              <p className="text-sm text-slate-400">No Logo</p>
+                            </div>
+                          </div>
                         )}
                       </div>
 
@@ -638,18 +692,25 @@ export default function SiteSettingsPage() {
                         <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
                           Big Logo
                         </label>
-                        {(bigLogoUrl || bigLogoPreview) ? (
+                        {((bigLogoUrl && bigLogoUrl.trim() !== '' && !bigLogoError) || (bigLogoPreview && bigLogoPreview.trim() !== '' && !bigLogoError)) ? (
                           <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
                             <div className="relative h-32 w-full">
                               <img
                                 src={bigLogoUrl || bigLogoPreview || ""}
                                 alt="Big Logo"
                                 className="h-full w-full object-contain"
+                                onError={() => {
+                                  setBigLogoError(true);
+                                }}
                               />
                             </div>
                           </div>
                         ) : (
-                          <p className="text-sm text-slate-400">No logo uploaded</p>
+                          <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+                            <div className="relative h-32 w-full flex items-center justify-center">
+                              <p className="text-sm text-slate-400">No Logo</p>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
