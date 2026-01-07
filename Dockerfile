@@ -7,11 +7,18 @@ RUN apk add --no-cache libc6-compat
 # Set working directory
 WORKDIR /app
 
+# Configure npm for better network handling
+RUN npm config set fetch-timeout 300000 && \
+    npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000
+
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies with increased timeout and retries
+RUN npm ci --prefer-offline --no-audit || \
+    (npm cache clean --force && npm ci --prefer-offline --no-audit)
 
 # Copy source code
 COPY . .
